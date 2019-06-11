@@ -105,3 +105,6 @@ venv.bak/
 
 # localized test/train files (csv format)
 *.csv
+
+# editor stuff
+.vscode/
