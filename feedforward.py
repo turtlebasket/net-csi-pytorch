@@ -1,9 +1,10 @@
 # CLEVERWALL - MAIN
 # ** Currently unusable, and still a MASSIVE WIP.
 
-import pandas
 import torch
 from torch import nn
+import os
+from scapy.utils import rdpcap
 
 # Hyper-parameters 
 input_size = 784
@@ -17,22 +18,24 @@ learning_rate = 0.001
 # ok so it looks like torch.device() got thanos snapped by the pytorch devs
 # ** RESOLVE LATER
 
-# load dataset from wireshark CSV
+# load dataset from wireshark PCAP
 class TrafficDataset(torch.utils.data.Dataset):
-    def __init__(self, csv_file, root_dir):
-        self.csv_file = pandas.read_csv(csv_file)
-        self.root_dir = root_dir
+    def __init__(self, filename):
+        self.capture_reader= rdpcap(filename, 1000)
+        self.packets = []
+        for (pkt_data, pkt_metadata) in self.capture_reader:
+            # Append array to array. Should make data/metadata easier to track
+            self.packets.append(tuple((pkt_data, pkt_metadata))) # pass in tuple
 
-    # return length given by CSV reader
+    # return length of packet list
     def __len__(self): 
-        return len(self.csv_file)
+        return len(self.packets)# FIX LATER.
     
     # return item to whoever's reading from dataset
-    def __getitem(self, index):
-        # NOT FINISHED. figure out indexing
-        return 0
-
-train_dataset = TrafficDataset('train.csv', './data/')
+    def __getitem__(self, index):
+        return self.packets[index]
+        
+train_dataset = TrafficDataset('./data/train.pcap')
 train_loader = torch.utils.data.DataLoader(dataset=train_dataset)
 
 # basic nn class setup
