@@ -1,13 +1,10 @@
-# cleverwall
-An open-source neural net to detect and counter threats on a local network.
+cleverwall
+==========
+Cleverwall is an open-source neural network to detect and counter threats on a local network.
 
-### 6/10/2019 - Little design change
-After a few hours of beating my head against the wall, I've come to a conclusion about the current setup.
-My current idea of how this is supposed to work out is:
-- Feed a CSV file full of traffic logs (from wireshark) into the lil brain
-- Iterate for eternity to find patterns in the traffic.  
-
-Should work great, right?
-Wrong. The CSV packet logs don't contain actual data. They're simply metadata.
-I need to find a way to feed the *actual goddamn pcap files* into the network, then extract packet contents and analyze *that*.
-I monkeyed pretty hard today. :(
+How does it work?
+-----------------
+1. Data in the form of a packet capture is compared against snort and rules are generated.
+2. Packet capture are loaded into cleverwall.
+3. `cleverwall` will use some form of neural net (feed-forward is the current objective) to "learn" patterns in packet data (hex dumps) that may be dangerous.
+4. Since cleverwall will work as an IDS/IPS, it will either directly drop packets that follow the patterns it learns or it will simply generate more rules for an existing one like Snort or Suricata.
