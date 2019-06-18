@@ -108,3 +108,6 @@ venv.bak/
 
 # editor stuff
 .vscode/
+
+# capture files (train/test data)
+*.pcap
