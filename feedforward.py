@@ -3,7 +3,7 @@ CLEVERWALL - MAIN
 ** Currently unusable, and still a MASSIVE WIP.
 """
 
-# import torch
+import torch
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
 from scapy.all import rdpcap, hexdump
@@ -37,9 +37,8 @@ class TrafficDataset(Dataset):
     def __getitem__(self, index):
         return hexdump(self.capture_reader)
 
-TRAIN_DATASET = TrafficDataset('./data/train_capture.pcap')
-TRAIN_LOADER = DataLoader(dataset=TRAIN_DATASET)
-
+train_dataset = TrafficDataset('./data/train_capture.pcap')
+train_loader = DataLoader(dataset=train_dataset)
 
 class NeuralNet(nn.Module):
     """
@@ -60,8 +59,26 @@ class NeuralNet(nn.Module):
         out = self.fc2(out)
         return out
 
-net = NeuralNet(INPUT_SIZE, HIDDEN_SIZE, NUM_CLASSES)
-print("=== NETWORK INSTANTIATED ===\n{}".format(net))
+net_obj = NeuralNet(INPUT_SIZE, HIDDEN_SIZE, NUM_CLASSES)
+print("=== NETWORK INSTANTIATED ===\n{}".format(net_obj))
 
 # start on ML algorithm later
 # for epoch in range(NUM_EPOCHS)
+
+# Learn the details of how the algorithm works later :P
+criterion = nn.CrossEntropyLoss()
+
+# Adam (from Optimizer) - specialized optimization algorithm
+optimizer = torch.optim.Adam(net_obj.parameters())
+
+# Training Phase
+total_steps = len(net_obj)
+
+"""
+
+for epoch in range(NUM_EPOCHS):
+    for i, captures in enumerate(train_loader):
+        # Read capture item through tensors
+        # Step forward
+        # backpropagate and correct
+"""
