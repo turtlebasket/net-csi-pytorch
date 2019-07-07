@@ -1,1 +1,1 @@
-$(sudo suricata -r $1 -l . && rm -f *.log *.json && sudo chown $USERNAME log.pcap.*) > /dev/null
+$(sudo suricata -r $1 -l . && rm -f *.log log.pcap.* && sudo chown $USERNAME eve.json) > /dev/null

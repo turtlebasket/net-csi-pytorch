@@ -3,10 +3,11 @@ CLEVERWALL - MAIN
 ** Currently unusable, and still a MASSIVE WIP.
 """
 
+from scapy.all import rdpcap, hexdump
+import json
 import torch
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
-from scapy.all import rdpcap, hexdump
 
 # Hyper-parameters
 INPUT_SIZE = 784    # Size of input layer
@@ -23,11 +24,22 @@ LEARNING_RATE = 0.001
 class TrafficDataset(Dataset):
     """
     Extends torch's default Dataset class
-    load dataset from wireshark PCAP
+    load data from dataset from entire PCAP,
+    check with data from suricata's log PCAP
     """
 
-    def __init__(self, filename):
-        self.capture_reader = rdpcap(filename, 1000)
+    def __init__(self, traffic_filename, rules_filename):
+        # read pcap data for packets
+        self.capture_reader = rdpcap(traffic_filename, 1000)
+        # indices that suricata has flagged
+        self.flagged_indices = []
+        flagged_json_entries = []
+        scan_file = open(rules_filename, 'r')
+
+        # optimize later :-/
+        # for now, get 'pcap_cnt' int value
+        for line in scan_file:
+            flagged_json_entries.append(json.loads(line))
 
     # return length of packet list
     def __len__(self):
@@ -35,9 +47,13 @@ class TrafficDataset(Dataset):
 
     # return item to whoever's reading from dataset
     def __getitem__(self, index):
-        return hexdump(self.capture_reader)
+        dump = hexdump(self.capture_reader)
+        flagged = False
 
-train_dataset = TrafficDataset('./data/train_capture.pcap')
+        # pass value back as dict
+        return {'dump':dump, 'flagged': flagged}
+
+train_dataset = TrafficDataset('./data/train_capture.pcap', './data/train_rules.json')
 train_loader = DataLoader(dataset=train_dataset)
 
 class NeuralNet(nn.Module):
@@ -54,6 +70,7 @@ class NeuralNet(nn.Module):
         self.fc2 = nn.Linear(hidden_size, num_classes)
 
     def forward(self, x):
+        # at some point, probably wanna learn what all these layers actually do :c
         out = self.fc1(x)
         out = self.relu(out)
         out = self.fc2(out)
@@ -72,10 +89,9 @@ criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(net_obj.parameters())
 
 # Training Phase
-total_steps = len(net_obj)
+total_steps = len(train_loader)
 
 """
-
 for epoch in range(NUM_EPOCHS):
     for i, captures in enumerate(train_loader):
         # Read capture item through tensors
