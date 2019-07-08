@@ -1,5 +1,8 @@
 cleverwall
 ==========
+
+<img src="assets/cleverwall.png" width=800/>
+
 `cleverwall` is an open-source neural network to detect and counter threats on a local network.
 
 An important note: CLEVERWALL IS NOT YET COMPLETE, as I basically have no clue what I'm doing. It may be another couple of months. Here are my current plans:
