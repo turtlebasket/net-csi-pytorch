@@ -30,14 +30,20 @@ class TrafficDataset(Dataset):
     def __init__(self, traffic_filename, rules_filename):
         # read pcap data for packets
         self.capture_reader = rdpcap(traffic_filename, 1000)
-        # indices that suricata has flagged
-        self.flagged_indices = []
         scan_file = open(rules_filename, 'r')
 
-        # optimize later :-/
-        # for now, get 'pcap_cnt' int value
+        # indices that suricata has flagged
+        flagged_entries = []
         for line in scan_file:
-            self.flagged_indices.append(json.loads(line))
+            flagged_entries.append(json.loads(line))
+
+        self.flagged_indices = []
+        for e in flagged_entries:
+            # find a proper way to get EVERYTHING later.
+            try:
+                self.flagged_indices.append(e['pcap_cnt'])
+            except KeyError:
+                pass
 
     # return length of packet list
     def __len__(self):
