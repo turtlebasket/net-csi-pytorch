@@ -17,15 +17,14 @@ NUM_EPOCHS = 5
 BATCH_SIZE = 100
 LEARNING_RATE = 0.001
 
-# DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-# ok so it looks like torch.device() got thanos snapped by the pytorch devs
-# ** RESOLVE LATER
+# For some reason, linter can't find `torch.device`. Ignore for now
+DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class TrafficDataset(Dataset):
     """
     Extends torch's default Dataset class
     load data from dataset from entire PCAP,
-    check with data from suricata's log PCAP
+    check with data from suricata's log (EVE.JSON format)
     """
 
     def __init__(self, traffic_filename, rules_filename):
@@ -33,13 +32,12 @@ class TrafficDataset(Dataset):
         self.capture_reader = rdpcap(traffic_filename, 1000)
         # indices that suricata has flagged
         self.flagged_indices = []
-        flagged_json_entries = []
         scan_file = open(rules_filename, 'r')
 
         # optimize later :-/
         # for now, get 'pcap_cnt' int value
         for line in scan_file:
-            flagged_json_entries.append(json.loads(line))
+            self.flagged_indices.append(json.loads(line))
 
     # return length of packet list
     def __len__(self):
@@ -47,20 +45,23 @@ class TrafficDataset(Dataset):
 
     # return item to whoever's reading from dataset
     def __getitem__(self, index):
-        dump = hexdump(self.capture_reader)
-        flagged = False
+        target_entry = self.capture_reader[index]
+        dump = str(hexdump(target_entry, dump=True))
+
+        # Suricata logs packet count starting from zero, whereas
+        # scapy starts from 1
+        flagged = True if index+1 in self.flagged_indices else False
 
         # pass value back as dict
-        return {'dump':dump, 'flagged': flagged}
+        # return {'dump':dump, 'flagged': flagged}
+        return dump, flagged
 
-train_dataset = TrafficDataset('./data/train_capture.pcap', './data/train_rules.json')
-train_loader = DataLoader(dataset=train_dataset)
 
 class NeuralNet(nn.Module):
     """
     basic nn model setup (fully connected feed-forward neural net).
-    Inherits from nn.Module, which is for storing machine state
     """
+
     def __init__(self, input_size, hidden_size, num_classes):
         super(NeuralNet, self).__init__()
         # Let's work with some convolutional layers later, as they're
