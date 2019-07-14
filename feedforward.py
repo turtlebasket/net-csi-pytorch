@@ -53,14 +53,16 @@ class TrafficDataset(Dataset):
     def __getitem__(self, index):
         target_entry = self.capture_reader[index]
         dump = str(hexdump(target_entry, dump=True))
+        dump_tensor = torch.zeros(len(dump)).float()
+        for c in range(len(dump)):
+            # get 
+            dump_tensor[c] = ord(dump[c])
 
-        # Suricata logs packet count starting from zero, whereas
-        # scapy starts from 1
-        flagged = True if index+1 in self.flagged_indices else False
+        # IMPORTANT: Suricata logs packet count starting from zero, whereas scapy starts from 1
+        flagged = (index+1 in self.flagged_indices)
 
-        # pass value back as dict
-        # return {'dump':dump, 'flagged': flagged}
-        return dump, flagged
+        # pass value back as tuple
+        return dump_tensor, flagged
 
 
 class NeuralNet(nn.Module):
