@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 CLEVERWALL - MAIN
 ** Currently unusable, and still a MASSIVE WIP.
@@ -10,9 +12,10 @@ from torch import nn
 from torch.utils.data import Dataset, DataLoader
 
 # Hyper-parameters
-INPUT_SIZE = 784    # Size of input layer
+# INPUT_SIZE = 784    # Size of input layer
+INPUT_SIZE = 25000 # Size of input layer
 HIDDEN_SIZE = 500   # Size of output layer
-NUM_CLASSES = 10
+NUM_CLASSES = 2
 NUM_EPOCHS = 5
 BATCH_SIZE = 100
 LEARNING_RATE = 0.001
@@ -27,7 +30,7 @@ class TrafficDataset(Dataset):
     check with data from suricata's log (EVE.JSON format)
     """
 
-    def __init__(self, traffic_filename, rules_filename):
+    def __init__(self, traffic_filename, rules_filename, input_size):
         # read pcap data for packets
         self.capture_reader = rdpcap(traffic_filename, 1000)
         scan_file = open(rules_filename, 'r')
@@ -53,7 +56,8 @@ class TrafficDataset(Dataset):
     def __getitem__(self, index):
         target_entry = self.capture_reader[index]
         dump = str(hexdump(target_entry, dump=True))
-        dump_tensor = torch.zeros(len(dump)).float()
+        # dump_tensor = torch.zeros(len(dump)).float()
+        dump_tensor = torch.zeros(INPUT_SIZE).float()
         for c in range(len(dump)):
             # get 
             dump_tensor[c] = ord(dump[c])
@@ -63,7 +67,6 @@ class TrafficDataset(Dataset):
 
         # pass value back as tuple
         return dump_tensor, flagged
-
 
 class NeuralNet(nn.Module):
     """
@@ -85,25 +88,64 @@ class NeuralNet(nn.Module):
         out = self.fc2(out)
         return out
 
-net_obj = NeuralNet(INPUT_SIZE, HIDDEN_SIZE, NUM_CLASSES)
-print("=== NETWORK INSTANTIATED ===\n{}".format(net_obj))
+if __name__ == '__main__':
 
-# start on ML algorithm later
-# for epoch in range(NUM_EPOCHS)
+    print(
+        "      __                             ____  \n"
+        " ____/ /__ _  _____ _____    _____ _/ / /  \n"
+        "/ __/ / -_) |/ / -_) __/ |/|/ / _ `/ / /   \n"
+        "\\__/_/\\__/|___/\\__/_/  |__,__/\\_,_/_/_/\n"
+    )
 
-# Learn the details of how the algorithm works later :P
-criterion = nn.CrossEntropyLoss()
+    print("Create Dataloader...", end=" ")
+    train_dataset = TrafficDataset('./data/train_capture.pcap', './data/train_rules.json', INPUT_SIZE)
+    train_loader = DataLoader(dataset=train_dataset)
+    print("Done.")
 
-# Adam (from Optimizer) - specialized optimization algorithm
-optimizer = torch.optim.Adam(net_obj.parameters())
+    """
+    # TESTY ZONE
+    dataiter = iter(train_loader)
+    packet, flag = dataiter.next()
+    print("Packets:\n{}\nFlag:\n{}\n".format(packet, flag))
+    """
 
-# Training Phase
-total_steps = len(train_loader)
+    print("Create Network Instance...", end=" ")
+    net_obj = NeuralNet(INPUT_SIZE, INPUT_SIZE, NUM_CLASSES)
+    print("Done.")
 
-"""
-for epoch in range(NUM_EPOCHS):
-    for i, captures in enumerate(train_loader):
-        # Read capture item through tensors
-        # Step forward
-        # backpropagate and correct
-"""
+    print("Set parameters...", end=" ")
+    # Learn the details of how Cross Entropy Loss works later
+    criterion = nn.CrossEntropyLoss()
+    # Adam (from Optimizer) - specialized optimization algorithm
+    optimizer = torch.optim.Adam(net_obj.parameters(), lr=LEARNING_RATE)
+    total_steps = len(train_loader)
+    print("Done.")
+
+    # Trainy algorithm
+    print("Start analysis.")
+
+    for epoch in range(NUM_EPOCHS):
+        for i, (inputs, flags) in enumerate(train_loader, 0):
+
+            # IMPORTANT: Transform `inputs` tensor to match machine interface
+            # print("inputs: {}".format(inputs))
+
+            # clear gradients
+            optimizer.zero_grad()
+
+            # backtrack & optimize
+            outputs = net_obj(inputs)
+            loss = criterion(outputs, flags.long())
+            # print("loss calculated.")
+            loss.backward()
+            # print("backpropagation completed.")
+            optimizer.step()
+            # print("stepped forward.")
+
+            # log
+            if (i+1) % 100 == 0: # if iteration over dataset is complete...
+                print("[ Epoch {}/{} ] [ Step {}/{} ] [ Loss = {:.5f} ]".format(epoch, NUM_EPOCHS, i+1, total_steps, loss.item()))
+
+        print("Done.")
+
+    # Testy code down here
