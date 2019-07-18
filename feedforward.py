@@ -5,11 +5,15 @@ CLEVERWALL - MAIN
 ** Currently unusable, and still a MASSIVE WIP.
 """
 
-from scapy.all import rdpcap, hexdump
-import json
+# TODO: 
+# - [ ] Move tensor getter to init
+# - [ ] Pickle dataset, load from pkl file!
+# - [ ] Find out what that issue is with loss being zero
+
 import torch
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
+import dataset
 
 # Hyper-parameters
 # INPUT_SIZE = 784    # Size of input layer
@@ -20,53 +24,11 @@ NUM_EPOCHS = 5
 BATCH_SIZE = 100
 LEARNING_RATE = 0.001
 
+# STORAGE FILE NAME
+DATA_STOR="dataset1.pkl"
+
 # For some reason, linter can't find `torch.device`. Ignore for now
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-class TrafficDataset(Dataset):
-    """
-    Extends torch's default Dataset class
-    load data from dataset from entire PCAP,
-    check with data from suricata's log (EVE.JSON format)
-    """
-
-    def __init__(self, traffic_filename, rules_filename, input_size):
-        # read pcap data for packets
-        self.capture_reader = rdpcap(traffic_filename, 1000)
-        scan_file = open(rules_filename, 'r')
-
-        # indices that suricata has flagged
-        flagged_entries = []
-        for line in scan_file:
-            flagged_entries.append(json.loads(line))
-
-        self.flagged_indices = []
-        for e in flagged_entries:
-            # find a proper way to get EVERYTHING later.
-            try:
-                self.flagged_indices.append(e['pcap_cnt'])
-            except KeyError:
-                pass
-
-    # return length of packet list
-    def __len__(self):
-        return len(self.capture_reader)# FIX LATER.
-
-    # return item to whoever's reading from dataset
-    def __getitem__(self, index):
-        target_entry = self.capture_reader[index]
-        dump = str(hexdump(target_entry, dump=True))
-        # dump_tensor = torch.zeros(len(dump)).float()
-        dump_tensor = torch.zeros(INPUT_SIZE).float()
-        for c in range(len(dump)):
-            # get 
-            dump_tensor[c] = ord(dump[c])
-
-        # IMPORTANT: Suricata logs packet count starting from zero, whereas scapy starts from 1
-        flagged = (index+1 in self.flagged_indices)
-
-        # pass value back as tuple
-        return dump_tensor, flagged
 
 class NeuralNet(nn.Module):
     """
@@ -97,8 +59,16 @@ if __name__ == '__main__':
         "\\__/_/\\__/|___/\\__/_/  |__,__/\\_,_/_/_/\n"
     )
 
+    print("Import Dataset...", end=" ")
+
+    try:
+        train_dataset = dataset.load_dataset(DATA_STOR)
+    except (FileNotFoundError, EOFError) as e:
+        train_dataset = dataset.TrafficDataset('./data/train_capture.pcap', './data/train_rules.json', INPUT_SIZE)
+        dataset.store_dataset(train_dataset, DATA_STOR)
+    print("Done.")
+
     print("Create Dataloader...", end=" ")
-    train_dataset = TrafficDataset('./data/train_capture.pcap', './data/train_rules.json', INPUT_SIZE)
     train_loader = DataLoader(dataset=train_dataset)
     print("Done.")
 
@@ -149,3 +119,4 @@ if __name__ == '__main__':
         print("Done.")
 
     # Testy code down here
+    # At the end, I'll want to write to a checkpoint (.ckpt)
