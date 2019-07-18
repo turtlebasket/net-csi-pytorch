@@ -6,9 +6,10 @@ CLEVERWALL - MAIN
 """
 
 # TODO: 
-# - [ ] Move tensor getter to init
-# - [ ] Pickle dataset, load from pkl file!
-# - [ ] Find out what that issue is with loss being zero
+# - [x] Move tensor getter to init
+# - [x] Pickle dataset, load from pkl file!
+# - [x] Find out what that issue is with loss being zero
+# - [ ] Find a way to map hex dump onto a smaller array!!
 
 import torch
 from torch import nn
@@ -17,12 +18,12 @@ import dataset
 
 # Hyper-parameters
 # INPUT_SIZE = 784    # Size of input layer
-INPUT_SIZE = 25000 # Size of input layer
+INPUT_SIZE = 1000 # Size of input layer
 HIDDEN_SIZE = 500   # Size of output layer
 NUM_CLASSES = 2
 NUM_EPOCHS = 5
 BATCH_SIZE = 100
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.0000001 # important if the network's gonna pick up on patterns
 
 # STORAGE FILE NAME
 DATA_STOR="dataset1.pkl"
@@ -105,8 +106,9 @@ if __name__ == '__main__':
 
             # backtrack & optimize
             outputs = net_obj(inputs)
+            # print("outputs: {}".format(outputs))
             loss = criterion(outputs, flags.long())
-            # print("loss calculated.")
+            # print("loss calculated, {}".format(loss.item()))
             loss.backward()
             # print("backpropagation completed.")
             optimizer.step()
@@ -114,9 +116,9 @@ if __name__ == '__main__':
 
             # log
             if (i+1) % 100 == 0: # if iteration over dataset is complete...
-                print("[ Epoch {}/{} ] [ Step {}/{} ] [ Loss = {:.5f} ]".format(epoch, NUM_EPOCHS, i+1, total_steps, loss.item()))
+                print("Epoch {}/{} \t\t Step {}/{} \t\t Loss = {:.5f}".format(epoch, NUM_EPOCHS, i+1, total_steps, loss.item()))
 
-        print("Done.")
+    print("Done.")
 
     # Testy code down here
     # At the end, I'll want to write to a checkpoint (.ckpt)
