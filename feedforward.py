@@ -116,7 +116,7 @@ if __name__ == '__main__':
 
             # log
             if (i+1) % 100 == 0: # if iteration over dataset is complete...
-                print("Epoch {}/{} \t\t Step {}/{} \t\t Loss = {:.5f}".format(epoch, NUM_EPOCHS, i+1, total_steps, loss.item()))
+                print("Epoch {}/{}\t\tStep {}/{}\t\tLoss = {:.5f}".format(epoch, NUM_EPOCHS, i+1, total_steps, loss.item()))
 
     print("Done.")
 
