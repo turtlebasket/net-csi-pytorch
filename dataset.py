@@ -6,15 +6,13 @@ from torch.utils.data import Dataset
 
 class TrafficDataset(Dataset):
     """
-    Extends torch's default Dataset class
-    load data from dataset from entire PCAP,
-    check with data from suricata's log (EVE.JSON format)
+    Extends torch's default Dataset class. Loads data from dataset from entire PCAP,
+    checks with data from suricata's log (EVE.JSON)
     """
 
-    def __init__(self, traffic_filename, rules_filename, input_size):
+    def __init__(self, traffic_filename, rules_filename):
 
         # Read from files
-        self.input_size = input_size
         capture_reader = rdpcap(traffic_filename, 1000)
         self.dataset_length = len(capture_reader)
         scan_file = open(rules_filename, 'r')
@@ -23,13 +21,12 @@ class TrafficDataset(Dataset):
         self.dump_tensors = []
         for item in capture_reader:
             dump = str(hexdump(item, dump=True))
-            dump_tensor = torch.zeros(self.input_size).float()
-            # if len(dump) <= input_size:
+            dump_tensor = torch.zeros(len(dump)).float()
             for c in range(len(dump)):
-                try:
-                    dump_tensor[c] = ord(dump[c])
-                except IndexError: # stop copying once out of range. find better solution later
-                    break
+                # try:
+                dump_tensor[c] = ord(dump[c])
+                # except IndexError: # stop copying once out of range. find better solution later
+                #     break
             self.dump_tensors.append(dump_tensor)
 
         # Determine whether nor not packet was flagged by suricata
@@ -51,7 +48,7 @@ class TrafficDataset(Dataset):
             self.flags.append(index+1 in flagged_indices)
 
     def __len__(self):
-        return self.dataset_length 
+        return self.dataset_length
 
     # return item to whoever's reading from dataset
     def __getitem__(self, index):
@@ -69,3 +66,26 @@ def store_dataset(dataset: TrafficDataset, filename: str):
 def load_dataset(filename: str):
     with open(filename, 'rb') as stor:
         return pickle.load(stor)
+
+# custom collate_fn for multi-size batch processing (used by dataloader)
+
+def multisize_collate_fn(batch):
+    # values passed back as (dump, flag)
+    # dumps = [item[0] for item in batch]
+    # flags = [item[1] for item in batch]
+
+    dumps = []
+    flags = []
+
+    for item in batch:
+        dumps.append(item[0])
+        flags.append(item[1])
+
+    print(dumps)
+    print(flags)
+
+    dumps = torch.LongTensor(dumps)
+    flags = torch.LongTensor(flags)
+    # return torch.stack(batch, 0)
+    # return torch.as_tensor(batch)
+    return [dumps, flags]
