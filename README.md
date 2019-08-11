@@ -4,15 +4,4 @@
 
 <hr>
 
-An important note: THIS PROJECT IS NOT YET COMPLETE, as I basically have no clue what I'm doing. It may be another couple of months. Here are my current plans:
-
-Installation
-------------
-I'll establish a clear way of doing this once I finalize net-csi.
-
-Progress
---------
-- [x] A traffic capture (Wireshark PCAP) is analyzed with `suricata` and a base ruleset is generated.
-- [x] The original capture data and `suricata`'s resulting `eve.json` log are loaded into net-csi as a `TrafficDataset`.
-- [x] `net-csi` will use some model of neural net (The current model is a residual neural network) to identify patterns in packet data (hex dumps) that correspond to malicious activity.
-- [ ] `net-csi` will then flag packets it deems malicious and log them, much like `suricata`.
+NOTE: This project is no longer being worked on, which means it won't ever be completed. I *am*, however, moving to TensorFlow for better documentation and community support. Check the project's current home out [here](https://github.com/turtlebasket/net-csi).
